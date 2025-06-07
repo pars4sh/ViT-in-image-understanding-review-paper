@@ -1,0 +1,377 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+%Template version as of 6/27/2024
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{url}
+
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\date{\today}
+\title{Vision Transformers in Image Understanding: A New Paradigm\\
+}
+\author{
+Erfan Yekehzare, Seyyed Parsa Sharifi, Sayedmehdi Ayati Najafabadi, Pouria Matinifard \\
+Department of IEF, University of Rostock, Rostock, Germany \\
+\{erfan.yekehzare, seyyed.sharifi, sa.najafabadi, pouria.matinifard\}@uni-rostock.de
+}
+
+\maketitle
+
+\begin{abstract}
+Vision Transformers (ViTs) have emerged as a powerful alternative to convolutional neural networks (CNNs) for a variety of image understanding tasks. Derived from the Transformer architecture employed in natural language processing, ViTs eliminate convolutional inductive biases, using self-attention instead to capture global dependencies across image regions. This review surveys key developments since the original ViT model by Dosovitskiy et al.~\cite{dosovitskiy2021an}, including hierarchical architectures such as the Swin Transformer \cite{liu2021swin} and the Pyramid Vision Transformer \cite{wang2021pyramidvisiontransformerversatile}. These architectures improve scalability and localization for dense prediction. Additionally, we examine data-efficient training techniques and highlight the impact of large-scale pretraining and self-supervised methods, such as masked autoencoders (MAEs) \cite{he2022masked} and DINO \cite{caron2021emerging}. Furthermore, we explore the performance of ViTs in domains such as object detection, medical imaging, and video understanding. Finally, we discuss core limitations—computational cost, data dependence, and weak locality—and outline promising directions for future research. This work provides a concise yet comprehensive overview of ViTs as a transformative paradigm in computer vision.
+\end{abstract}
+
+
+
+
+\begin{IEEEkeywords}
+Vision Transformers, Self-Attention, Image Understanding, Transfer Learning, Self-Supervised Learning, Object Detection, Semantic Segmentation, Video Recognition, Deep Learning.
+\end{IEEEkeywords}
+
+
+\section{Introduction}
+The Vision Transformer (ViT) presents notable benefits over conventional convolutional neural networks (CNNs), primarily due to its reliance on fewer inductive biases and its strong performance on large-scale datasets \cite{dosovitskiy2021an}. In comparison, CNNs embed strong assumptions such as locality and translation invariance, which enhance their data efficiency, particularly on small to medium-sized datasets \cite{wu2021cvt}. Nonetheless, in low-data settings, ViTs often lag behind CNNs unless complemented with extensive data augmentation or hybrid architectures \cite{touvron2021training, wu2021cvt}.
+
+Despite the longstanding dominance of CNNs in visual recognition, ViTs have demonstrated superior scalability as data volume and model size increase \cite{dosovitskiy2021an, touvron2021training}. For example, when trained on large datasets like JFT-300M, ViTs can significantly outperform CNN models such as ResNet on benchmarks like ImageNet \cite{dosovitskiy2021an}. Additionally, advancements like the Swin Transformer incorporate hierarchical structures and localized attention mechanisms to refine ViT's capabilities, narrowing the performance gap in dense prediction tasks such as object detection and segmentation \cite{liu2021swin, wang2021pyramidvisiontransformerversatile}.
+
+Consequently, while CNNs are generally more suitable for data-limited tasks with strong spatial priors, ViTs are well-suited for large-scale applications, offering adaptable architectures and substantial representational power when adequately trained.
+
+
+\section{Architectural Variants and Improvements}
+
+Several enhancements have been proposed to improve the original Vision Transformer (ViT) architecture, targeting its limitations in spatial resolution, scalability, and efficiency. A key focus has been the trade-off in patch size, where smaller patches improve spatial detail but increase computational cost. Hierarchical structures, as in Swin Transformer \cite{liu2021swin} and Pyramid Vision Transformer (PVT) \cite{wang2021pyramidvisiontransformerversatile}, introduce multi-scale representations for better feature learning in dense prediction tasks. Swin employs window-based attention and shifted windows for efficient computation, while PVT reduces resource usage with spatial-reduction attention. Hybrid models \cite{dosovitskiy2021an, wu2021cvt} combine CNN and Transformer strengths for better data efficiency. Additionally, advances in token reduction and positional embeddings improve ViT performance on high-resolution and variable-sized inputs.
+
+
+
+\subsection{Patch Size vs. Performance Trade-offs}\label{AA}
+The patch size in Vision Transformers (ViTs) significantly influences the balance between spatial detail, computational cost, and overall performance. While the original ViT used 16$\times$16 patches to achieve strong results on large datasets like ImageNet-21k and JFT-300M~\cite{dosovitskiy2021an}, later models such as Swin Transformer~\cite{liu2021swin} demonstrated that smaller patches (e.g., 4$\times$4) preserve spatial information better—beneficial for dense prediction tasks. However, smaller patches increase the number of tokens, raising computational complexity, whereas larger patches reduce cost but risk losing fine details. DeiT~\cite{touvron2021training} retained the 16$\times$16 setting, focusing instead on data efficiency through training strategies. Empirical studies, such as those in~\cite{zhai2022scaling}, suggest that performance changes are modest when patch size and image resolution are scaled together, emphasizing that the total number of patches plays a more critical role. These trade-offs are quantitatively illustrated in Table~\ref{tab:patch_size}.
+
+\begin{table}[ht]
+\centering
+\caption{Top-1 accuracy on INet10 for ViT models with varying patch sizes and resolutions. B/S denote base/small models; numbers indicate patch size~\cite{zhai2022scaling}.}
+\label{tab:patch_size}
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Model} & B/32 & B/48 & B/64 & S/16 & S/24 & S/32 \\
+\textbf{Res.} & 224 & 336 & 448 & 224 & 336 & 448 \\
+\hline
+\textbf{INet10} & 64.43 & 64.65 & 64.67 & 63.42 & 63.79 & 63.50 \\
+\hline
+\end{tabular}
+\end{table}
+
+
+\subsection{Hierarchical Vision Transformers}
+Hierarchical Vision Transformers address limitations of the original ViT architecture, particularly the fixed spatial resolution and lack of locality. Unlike ViT, which processes a flat sequence of patches, hierarchical models such as Swin Transformer \cite{liu2021swin} and Pyramid Vision Transformer (PVT) \cite{wang2021pyramidvisiontransformerversatile} adopt a multi-scale architecture, gradually reducing spatial resolution across layers. This structure allows better modeling of both local and global features, improving performance in dense prediction tasks. Swin Transformer, for instance, uses shifted window-based attention to enable cross-window interactions efficiently. These architectural innovations yield models that scale better and achieve state-of-the-art results in semantic segmentation and object detection.
+\vspace{1em}
+
+\textbf{Swin Transformer}. \hspace{0.5em}The Swin Transformer addresses key challenges in adapting Transformer models from language to computer vision, specifically the large variations in visual entity scale, unlike fixed-size word tokens \cite{lin2017feature,singh2018analysis,singh2018sniper}, and high image resolution, which makes global self-attention inefficient due to quadratic complexity \cite{vaswani2017attention,dosovitskiy2021an}. Tasks like semantic segmentation also require pixel-level predictions, which are intractable with standard Transformers.
+
+Swin solves this by using non-overlapping local windows for self-attention, keeping complexity linear to image size. Shifted windows connect across windows between layers, improving modeling and hardware efficiency \cite{hu2019local,ramachandran2019stand}. Furthermore, hierarchical feature maps are built by starting from small patches and merging them deeper in the network, similar to CNN pyramids \cite{lin2017feature,ronneberger2015u}.
+
+Architecturally, Swin (e.g., Swin-T) begins by splitting an RGB image into 4x4 non-overlapping patches, projected into a dimension C. The model uses four stages: Stage 1 has standard Transformer blocks, while Stages 2–4 reduce token count via patch merging, forming a hierarchical representation. Each Swin Transformer Block replaces global attention with Window-based Multi-head Self-Attention (W-MSA) and Shifted Window MSA (SW-MSA). Global attention scales quadratically $(hw)^2$, while window-based attention scales linearly when window size M is fixed  A cyclic shift strategy is used for efficient shifted attention, and relative positional bias is added in attention \cite{bello2020attention}.
+
+
+
+
+ \begin{table}[ht]
+\caption{Swin models compared with key baselines on ImageNet-1K .}
+\label{tab:swin_compact}
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Params} & \textbf{FLOPs} & \textbf{Top-1 Acc.} \\
+\midrule
+ResNet-50 & 25M & 4.1G & 76.5\% \\
+DeiT-S & 22M & 4.6G & 79.8\% \\
+ViT-B/16 & 86M & 55.4G & 81.8\% \\
+Swin-T & 29M & 4.5G & 81.3\% \\
+Swin-B (224$^2$) & 88M & 15.4G & 83.5\% \\
+Swin-B (384$^2$) & 88M & 47.0G & 84.5\% \\
+Swin-L & 197M & 103.9G & 87.3\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+Thanks to these innovations, Swin Transformer performs exceptionally well across tasks: 87.3\% top-1 accuracy on ImageNet-1K \cite{deng2009imagenet} (classification), 58.7 box AP / 51.1 mask AP on COCO \cite{lin2014microsoft} (detection), and 53.5 mIoU on ADE20K (segmentation), surpassing previous methods by large margins. Swin-T outperforms ResNet-50 \cite{qiao2020detectors} and DeiT-S \cite{touvron2021training }. Swin-B outperforms ViT-B \cite{dosovitskiy2021an} and Swin-L achieves 87.3\%, +0.9\% over Swin-B.
+
+
+\vspace{1em}
+
+\textbf{Pyramid Vision Transformer (PVT)}.
+\hspace{0.5em}A novel Transformer backbone, the Pyramid Vision Transformer (PVT) \cite{wang2021pyramidvisiontransformerversatile}, addresses key limitations of conventional Transformer architectures in computer vision. PVT overcomes these challenges by using fine-grained image patches (e.g., 4x4 pixels) for high-resolution representation, crucial for dense prediction tasks. It employs a progressive shrinking pyramid to reduce sequence length and computational cost as the network deepens, and incorporates a spatial-reduction attention (SRA) layer to further optimize resource consumption for high-resolution features.
+
+
+\begin{table}[ht]
+\caption{Object detection performance on COCO val2017 using RetinaNet. PVT models outperform CNN-based backbones under comparable parameter counts.}
+\label{tab:pvt_retinanet}
+\centering
+\begin{tabular}{lcc}
+\toprule
+\textbf{Backbone} & \textbf{Params} & \textbf{AP (val2017)} \\
+\midrule
+ResNet-50 \cite{He2016deep} & 37.7M & 36.3 \\
+PVT-Small \cite{wang2021pyramidvisiontransformerversatile} & 34.2M & \textbf{40.4} \\
+ResNeXt101-64x4d \cite{xie2017aggregatedresidualtransformationsdeep} & 95.5M & 41.0 \\
+PVT-Large \cite{wang2021pyramidvisiontransformerversatile} & 71.1M & \textbf{42.6} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+The PVT offers significant advantages over traditional CNNs and the original ViT. Unlike CNNs, which have local receptive fields, PVT consistently provides a global receptive field, making it more suitable for detection and segmentation. Compared to ViT, PVT's pyramid structure allows for easier integration into dense prediction pipelines like RetinaNet \cite{Lin2017focal} and Mask R-CNN \cite{He2017mask}. It can also form convolution-free pipelines when paired with other Transformer decoders, such as PVT+DETR \cite{Carion2020endtoend} for object detection.
+
+In performance, PVT demonstrates strong results. With RetinaNet \cite{Lin2017focal}, PVT-Small achieves 40.4 AP on COCO val2017, outperforming ResNet50 by 4.1 points. PVT-Large reaches 42.6 AP, 1.6 points better than ResNeXt101-64x4d, with 30\% fewer parameters.
+
+
+
+Similar to CNNs \cite{Simonyan2015very}, PVT \cite{wang2021pyramidvisiontransformerversatile} features a four-stage hierarchical architecture, each producing feature maps at different scales. A key innovation is its progressive shrinking strategy via patch embedding layers, which controls feature map scale by dividing input into patches and projecting them into lower-dimensional embeddings. This offers greater flexibility in constructing the feature pyramid than traditional convolutional strides.
+
+The spatial-reduction attention (SRA) layer is another critical component, replacing the standard multi-head attention (MHA) \cite{vaswani2017attention} in the Transformer encoder. SRA reduces the spatial scale of the key (K) and value (V) inputs before attention calculation. This dramatically cuts computational and memory overhead for high-resolution feature maps, allowing PVT \cite{wang2021pyramidvisiontransformerversatile} to operate efficiently with limited resources.
+
+
+
+\subsection{Hybrid CNN-Transformer Architectures}
+
+Hybrid architectures combine the locality and inductive biases of CNNs with the global modeling capacity of Transformers. The original ViT explored a hybrid model that uses a ResNet-50 backbone to extract features before applying the Transformer encoder \cite{dosovitskiy2021an}. CvT (Convolutional Vision Transformer) further integrates convolutions into both the embedding and attention mechanisms \cite{wu2021cvt}, enhancing spatial encoding and locality. These models exhibit better data efficiency, faster convergence, and improved performance on datasets like ImageNet. By merging strengths from both paradigms, hybrid models provide a balanced solution for medium-sized datasets.
+
+\subsection{Token Reduction and Efficient Attention Mechanisms}
+
+Token reduction and efficient attention mechanisms are essential for scaling ViTs to high-resolution images. The quadratic complexity of standard self-attention, as in the original ViT \cite{dosovitskiy2021an}, limits scalability. PiT introduces pooling-based token reduction that mimics CNN-like downsampling \cite{heo2021rethinking}, while NesT adopts a nested hierarchical structure to process fewer tokens progressively \cite{zhang2021aggregating}. Techniques like Performer \cite{choromanski2021rethinking} and Linformer \cite{wang2020linformer} approximate self-attention to reduce complexity to linear time. Swin Transformer \cite{liu2021swin}, with its windowed attention, also achieves linear computational cost while maintaining strong performance. These innovations significantly improve the applicability of ViTs to dense tasks and large inputs.
+
+\subsection{Learned vs. Fixed Positional Embeddings}
+
+Since Transformers lack an inherent understanding of spatial structure, positional embeddings are necessary in ViTs. The original ViT employs both learned and fixed 2D sine-cosine embeddings \cite{dosovitskiy2021an}. Fixed embeddings offer better generalization in low-data regimes, while learned embeddings provide more flexibility and often better performance on large datasets. Later models like Swin Transformer \cite{liu2021swin} and Focal Transformer \cite{yang2021focal} use relative positional encodings within local windows to support variable input sizes. DETR \cite{Carion2020endtoend} uses learned sinusoidal embeddings to align spatial locations effectively for object detection. The choice of positional embedding method depends on the task and data scale—fixed embeddings for robustness, learned ones for adaptability.
+
+
+\section{Training Strategies and Data Efficiency}
+
+
+\subsection{Pre-training on Large-Scale Datasets}
+
+Pre-training on massive datasets, such as JFT-300M, significantly improves the performance of ViTs. Dosovitskiy et al.~\cite{dosovitskiy2021an} showed that a ViT-L/16 model trained on JFT-300M outperforms CNN baselines on ImageNet. Zhai et al.~\cite{zhai2022scaling} confirmed that both the size of the dataset and the size of the model are critical factors. Raghu et al.~\cite{raghu2021vision} added a representational view, finding that ViTs exhibit smoother CKA similarity across layers when pretrained on larger datasets. This indicates that they have more transferable representations.
+
+\begin{table}[ht]
+    \centering
+    \caption{Top-1 accuracy of ViT models with different pre-training datasets.}
+    \begin{tabular}{lccc}
+        \hline
+        \textbf{Pre-training Dataset} & \textbf{Model} & \textbf{Top-1 Accuracy (\%)} \\ \hline
+        ImageNet-1k                   & ViT-B/16       & 76.5                         \\
+        ImageNet-21k                  & ViT-L/16       & 84.2                         \\
+        JFT-300M                      & ViT-L/16       & \textbf{88.55}               \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Fine-tuning in Low-Data Regimes (VTAB Suite)}
+
+The VTAB benchmark includes 19 tasks, each with 1,000 training samples. Pretraining on JFT-300M improves performance; for example, ViT-H/14 achieves 77.6\% on VTAB \cite{zhai2022scaling}. Raghu et al.~\cite{raghu2021vision} found that lower-layer representations remain consistent with as little as 3\% of the JFT data, aiding transfer. Unlike CNNs, which build locality hierarchically, ViTs' self-attention allows early access to global context.
+
+\begin{table}[ht]
+    \centering
+    \caption{VTAB benchmark results for models with various pretraining sources.}
+    \begin{tabular}{lccc}
+        \hline
+        \textbf{Model} & \textbf{Dataset} & \textbf{VTAB Score (\%)} \\ \hline
+        BiT-M          & JFT-300M         & 75.7                     \\
+        S4L            & ImageNet-1k      & 67.2                     \\
+        ViT-H/14       & JFT-300M         & \textbf{77.63}           \\
+        DeiT-B         & ImageNet-1k      & 72.7                     \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Self-Supervised Learning: MPP vs. Contrastive Learning}
+
+Self-supervised learning (SSL) enables ViTs to learn without human-labeled data. MAE \cite{he2022masked} uses masked patch prediction (MPP) to reconstruct missing image regions and achieves 79.1\%, outperforming fully supervised ViT-B/16 (77.9\%) on ImageNet-1k, despite using no labels during pretraining. Raghu et al.~\cite{raghu2021vision} showed that ViTs preserve spatial relationships better than CNNs, which supports the effectiveness of MPP. Contrastive methods such as DINO and MoCo \cite{caron2021emerging, chen2021empirical} maximize agreement between augmented views, with DINO leveraging a self-distillation framework and MoCo using a memory bank-based approach.
+
+\begin{table}[ht]
+    \centering
+    \caption{Comparison of MAE and supervised training methods on ImageNet-1k.}
+    \begin{tabular}{lccc}
+        \hline
+        \textbf{Method} & \textbf{Dataset} & \textbf{Top-1 Accuracy (\%)} \\ \hline
+        MAE             & ImageNet-1k      & \textbf{79.1}                \\
+        Supervised      & ImageNet-1k      & 77.9                         \\
+        SimMIM          & ImageNet-1k      & 78.8                         \\ \hline
+    \end{tabular}
+\end{table}
+
+\subsection{Transfer Learning and Few-Shot Performance}
+
+ViTs' uniform layer-wise representation and global token mixing benefit few-shot learning. Dosovitskiy et al.~\cite{dosovitskiy2021an} showed that ViTs excel in five-shot transfer learning. Raghu et al.~\cite{raghu2021vision} linked this to strong residual connections and stable intermediate features. Early access to global features and layer-to-layer similarity facilitate feature reuse.
+
+\begin{table}[ht]
+    \centering
+    \caption{5-shot accuracy of ViTs and CNNs on few-shot learning tasks.}
+    \begin{tabular}{lccc}
+        \hline
+        \textbf{Dataset} & \textbf{Model} & \textbf{Accuracy (\%)} \\ \hline
+        CIFAR-100        & ViT-L/16 (JFT) & \textbf{87.1}          \\
+        CIFAR-100        & BiT-L (JFT)    & 83.9                   \\
+        VTAB Avg.        & ViT-H/14 (JFT) & \textbf{77.6}          \\
+        VTAB Avg.        & DeiT-B (IN1k)  & 72.7                   \\ \hline
+    \end{tabular}
+\end{table}
+
+
+
+\section{Interpretability and Attention Analysis}
+
+Understanding how Vision Transformers (ViTs) make decisions is crucial for model transparency, particularly in safety-critical applications. Below, we summarize three key perspectives on ViT interpretability and attention behavior.
+
+\subsection{Visualizing Self-Attention Maps}
+
+In ViTs, a learnable \emph{class token} aggregates information from patch tokens via self-attention across all layers. Each layer's attention map quantifies how much each patch contributes to every other patch, including the class token. The \emph{attention rollout} method recursively multiplies attention matrices from all layers to trace the flow of information and reveal the cumulative contribution of each patch to the class token. Incorporating gradients of the loss with respect to attention weights using methods such as Grad-Rollout yields more accurate importance maps that highlight image regions that are heavily attended to and critical to the final decision \cite{zhang2021attention}. Visualizing these maps as heatmaps over the input image provides explanations of ViT predictions that are semantically meaningful.
+
+\subsection{Patch Level Semantic Attention vs. Pixel Level Representations}
+
+Unlike CNNs, which build representations from local pixels upward, ViTs operate on non-overlapping image patches from the beginning. This patch-based design enables semantic attention across the entire image, even in the initial layers. In "Patch-Level Representation Learning for Self-Supervised Vision Transformers," Yun et al.~\cite{yun2022patch} propose \emph{SelfPatch}, which leverages the assumption that neighboring patches share semantic context. During contrastive learning, SelfPatch treats spatially adjacent patches as positive pairs. The model learns to bring these positive pairs (semantically similar patches) closer together in representation space. This produces richer, localized features than random patch selection. Ablation studies demonstrate that using neighboring patches as positives yields superior patch-level representations and show that ViTs inherently capture global semantics earlier than pixel-focused CNNs.
+
+\subsection{Attention Distance and Receptive Fields in Transformer Layers}
+
+Although ViTs theoretically enable each token to attend globally from the first layer, empirical analyses reveal a progression from local to global attention. Raghu et al.~\cite{raghu2021vision} measure \emph{attention distance}—the average spatial separation between source and attended tokens—and show that early layers focus on nearby patches while deeper layers attend more globally. Similarly, the receptive fields of ViTs expand rapidly, becoming nearly global by the middle of the network, whereas the receptive fields of ResNets grow more gradually. Thus, despite their full self-attention, ViTs emulate CNN-like locality in the early layers before leveraging the global context in the later layers.
+
+\section{Applications and Specialized Domains}
+
+\subsection{Object Detection and Segmentation}
+
+Vision Transformers (ViTs) introduced a new approach to object detection, enabling end-to-end set prediction without anchor boxes or non-maximum suppression. Key milestones in this shift include DETR \cite{Carion2020endtoend}, Deformable DETR \cite{zhu2021deformable}, and Swin Transformer \cite{liu2021swin}.
+
+The DETR model formulates object detection as a bipartite matching problem. In this model, each object query predicts a bounding box and a class label. Although this approach is architecturally elegant, it suffers from slow convergence and suboptimal detection of small objects. Deformable DETR addresses these issues by applying sparse attention to a limited number of sampling points, thereby reducing complexity and improving performance. Deformable DETR achieves faster convergence and improves the AP for small objects from 20.5 to 25.1 on COCO \cite{zhu2021deformable}.
+
+The Swin Transformer acts as a hierarchical ViT backbone that uses shifted-window attention to scale linearly with image resolution. When integrated into Mask R-CNN, Swin Transformer surpasses ResNet-based detectors. In COCO evaluations, Swin-B achieves 50.5 box AP and 44.5 mask AP \cite{liu2021swin} (see Table~\ref{tab:object}).
+
+\begin{table}[ht]
+\caption{COCO val2017 Performance of DETR and Variants \cite{Carion2020endtoend}}
+\label{tab:object}
+\centering
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{\#Params} & \textbf{AP} & \textbf{AP\textsubscript{S}} & \textbf{AP\textsubscript{L}} \\
+\midrule
+DETR (R50) & 41M & 42.0 & 20.5 & 61.1 \\
+DETR-DC5 (R50) & 41M & 43.3 & 22.5 & 61.1 \\
+DETR (R101) & 60M & 43.5 & 21.9 & 61.8 \\
+DETR-DC5 (R101) & 60M & 44.9 & 23.7 & 62.3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Medical Image Classification}
+
+Tasks in medical imaging benefit from the ability of ViTs to model long-range spatial dependencies across anatomical structures or modalities. In TransMed \cite{dai2021transmed}, CNN-encoded T1 and T2 MRI sequences are fused using a Transformer to improve cross-modality representation and boost tumor classification accuracy by 10.1\% over CNN baselines.
+
+
+ViTs have also proven effective in diagnosing COVID-19. For example, Chen et al.~\cite{chen2024vitcovid} fine-tuned ViT-Base \cite{dosovitskiy2021an} on chest X-rays and achieved 95.79\% accuracy and 98.58\% recall on a multi-class classification task. AUC scores approach 0.999 for cases of the disease. Their analysis shows that 10 encoder blocks optimize performance while avoiding overfitting. These results are summarized in Table~\ref{tab:medical}.
+
+\begin{table}[ht]
+\caption{COVID-19 chest X-ray classification results \cite{chen2024vitcovid}. EfficientNet models are from \cite{cai2022efficientvit}, MViT2 from \cite{li2022mvitv2}, and ViT-Base variations from \cite{dosovitskiy2021an}.}
+\label{tab:medical}
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{Recall} & \textbf{F1 Score} \\
+\midrule
+EfficientNet-B0         & 94.65\% & 98.58\% & 98.44\% \\
+EfficientNet-B3         & 94.51\% & 98.59\% & 98.31\% \\
+EfficientNet-B5          & 93.94\% & 99.43\% & 98.32\% \\
+MViT2                   & 94.41\% & 96.88\% & 97.29\% \\
+ViT-Base-patch8         & 95.41\% & 99.15\% & 98.87\% \\
+ViT-Base-patch16        & 95.22\% & 98.31\% & 98.58\% \\
+ViT-Base-patch32        & 93.71\% & 98.29\% & 97.88\% \\
+\textbf{Proposed Model} & \textbf{95.79\%} & \textbf{98.58\%} & \textbf{98.73\%} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\subsection{Video Understanding and Temporal Attention}
+
+Video ViTs must efficiently process spatio-temporal sequences. The Video Swin Transformer \cite{liu2022videoswin} extends the 2D Swin Transformer to the 3D domain by incorporating spatiotemporal shifted windows, which enables scalable video modeling. On the SSv2 dataset \cite{goyal2017something}, Swin-B achieves a top-1 accuracy of 69.6\%, outperforming MViT \cite{fan2021multiscale} and ViViT.
+
+The TimeSformer \cite{bertasius2021space} uses a factorized attention mechanism that decouples spatial and temporal attention. Experiments show that applying temporal attention before spatial attention improves accuracy by 0.5\%, while reducing patch granularity lowers performance by up to 3\%. These results highlight the importance of temporal ordering and spatial resolution in ViT-based video models. (see Table~\ref{tab:video}).
+
+\begin{table}[ht]
+\caption{Top-1 and Top-5 Accuracy on SSv2 Benchmark. \textbf{K400}: Kinetics-400 dataset \cite{kay2017kinetics}.\cite{liu2022videoswin, bertasius2021space}}
+\label{tab:video}
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Pretrain} & \textbf{Top-1} & \textbf{Top-5} \\
+\midrule
+TimeSformer-HR \cite{bertasius2021space}        & ImageNet-21K & 62.5 & – \\
+TSM-RGB \cite{lin2019tsm}              & K400         & 63.3 & 88.2 \\
+SlowFast R101, 8×8 \cite{feichtenhofer2019slowfast}   & K400         & 63.1 & 87.6 \\
+ViViT-L/16x2 \cite{arnab2021vivit}         & –            & 65.4 & 89.8 \\
+MViT-B, 64×3 \cite{fan2021multiscale}         & K400         & 67.7 & 90.9 \\
+Swin-B (proposed)     & K400         & \textbf{69.6} & \textbf{92.7} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+Overall, these applications demonstrate the versatility of ViTs in various domains, ranging from structured clinical data to dense spatio-temporal tasks. This supports the idea that ViTs are emerging as a general-purpose vision backbone.
+
+\section{Challenges, Limitations, and Future Directions}
+
+Although Vision Transformers (ViTs) have demonstrated impressive performance across classification, segmentation, and video understanding tasks, several fundamental challenges remain.
+
+\subsection{Data Requirements and Transferability}
+
+ViTs heavily rely on large-scale pretraining to achieve strong performance, particularly in low-data regimes. Models such as ViT-L/16 show substantial gains when trained on datasets like JFT-300M rather than ImageNet-1k \cite{dosovitskiy2021an}. However, this reliance limits transferability to specialized domains, such as medical or remote sensing imagery, without extensive fine-tuning \cite{ruan2022vision}. Future work may focus on enhancing data efficiency through self-supervised methods (e.g., MAE, DINO) and lightweight hybrid CNN-ViT models to better adapt to limited or domain-specific datasets.
+
+\subsection{Computational Complexity at Scale}
+
+Standard self-attention scales quadratically with the number of tokens, posing challenges for high-resolution images and spatiotemporal sequences. As shown in temporal models like TimeSformer and Video Swin, increasing spatial or temporal resolution incurs significant training costs \cite{liu2022videoswin}. While strategies such as window-based attention mitigate some of this cost, scalable and efficient attention mechanisms—such as sparse or linear attention—remain an open research direction.
+
+\subsection{Locality and Fine-Grained Detail}
+
+Unlike CNNs, which encode strong locality priors, ViTs operate on global self-attention from the start, which can limit their ability to capture fine-grained spatial details. Interpretability studies reveal that ViTs progressively increase their receptive field across layers rather than starting globally in practice \cite{raghu2021vision}. Incorporating architectural components such as convolutions or localized attention may improve fine-detail recognition, particularly in domains like medical imaging and semantic segmentation.
+
+\smallskip
+Addressing these limitations is essential for improving the robustness, efficiency, and applicability of ViTs across both general-purpose and specialized image understanding tasks.
+
+
+
+
+\section{Conclusion}
+
+Vision Transformers (ViTs) have redefined the landscape of image understanding, offering scalable, flexible, and effective alternatives to convolutional architectures. Initially introduced by ViT \cite{dosovitskiy2021an} and advanced through hierarchical designs such as the Swin Transformer \cite{liu2021swin}, ViTs now achieve competitive performance in image classification, object detection, and semantic segmentation. 
+
+In parallel, training strategies such as masked autoencoding \cite{he2022masked} and contrastive self-supervised learning \cite{caron2021emerging} have enhanced ViTs' robustness and data efficiency, even in low-resource settings.
+
+Despite these advances, challenges persist in computational complexity, weak locality priors, and reliance on large-scale datasets. Future research will likely focus on more efficient attention mechanisms, hybrid CNN-Transformer models, and domain-specific adaptations. The continued evolution of ViT architectures underscores their emergence as a transformative framework in modern computer vision.
+
+
+
+\section*{Acknowledgment}
+All authors contributed substantially to the development of this review paper. Erfan Yekehzare was responsible for Section I: Introduction and Section II: Architectural Variants and Improvements. Seyyed Parsa Sharifi contributed Section V: Applications and Specialized Domains, Section VI: Challenges, Limitations, and Future Directions, the Abstract, and Section VII: Conclusion. Sayedmehdi Ayati Najafabadi worked on Section IV: Interpretability and Attention Analysis. Pouria Matinifard developed Section III: Training Strategies and Data Efficiency. 
+
+Seyyed Parsa Sharifi and Erfan Yekehzare collaboratively wrote, edited, and organized the entire manuscript.
+
+The authors are affiliated with the Institute of Electrical Engineering and Information Technology (IEF), University of Rostock, and gratefully acknowledge the department’s academic support.
+
+Language and editorial improvements were supported using AI-based tools. ChatGPT (OpenAI) was used to assist in rephrasing and improving clarity, and DeepL Write was used to enrich sentence structure and paragraph flow. After using these tools, the authors reviewed and edited the content as needed and take full responsibility for the content of the publication.
+
+
+
+\bibliographystyle{ieeetr}
+\bibliography{bibtex.bib}
+
+
+
+\end{document}
