@@ -2,7 +2,7 @@
 
 This repository contains a comprehensive literature review on Vision Transformers (ViTs) and their role in modern image understanding tasks. The review was developed as a graduate seminar project at the **Institute of Electrical Engineering and Information Technology (IEF), University of Rostock**.
 
-📄 **[Read the Full Paper (PDF)](ViT_in_image_Understanding.pdf)**
+📄 **[Read the Full Paper (PDF)](ViT_in_Image_Understanding.pdf)**
 
 ---
 
