@@ -43,7 +43,7 @@ The Vision Transformer (ViT) has emerged as a powerful alternative to convolutio
 | **Erfan Yekehzare**             | Section I: Introduction, Section II: Architectural Variants, Co-author/editor     |
 | **Seyyed Parsa Sharifi**        | Section V: Applications,Section VI: Challenges, Limitations, and Future Directions, Section VII: Conclusion, Abstract, Co-author/editor      |
 | **Pouria Matinifard**           | Section III: Training Strategies and Data Efficiency                                |
-| **Seyed Mehdi Ayati Najafabadi**| Section IV: Interpretability and Attention Analysis                                 |
+| **Sayedmehdi Ayati Najafabadi**| Section IV: Interpretability and Attention Analysis                                 |
 
 *All authors are affiliated with the University of Rostock.*
 
@@ -56,8 +56,8 @@ If you use or refer to this review in your research or projects, please cite it 
 ```bibtex
 @misc{vit_review_2025,
   title={Vision Transformers in Image Understanding: A New Paradigm},
-  author={Sharifi, Seyyed Parsa and Yekehzare, Erfan and Matinifard, Pouria and Ayati Najafabadi, Seyed Mehdi},
+  author={Sharifi, Seyyed Parsa and Yekehzare, Erfan and Matinifard, Pouria and Ayati Najafabadi, Sayedmehdi},
   year={2025},
   note={Literature review, University of Rostock},
-  url={https://github.com/YOUR_USERNAME/vision-transformers-review}
+  url={https://github.com/pars4sh/ViT-in-image-understanding-review-paper}
 }
